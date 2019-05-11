@@ -28,6 +28,7 @@ func main() {
 		Book{ID: 5, Title: "Golang good parts", Author: "Mr. Good", Year: "2014"},
 	)
 
+	// PUT: replace resource information
 	router := mux.NewRouter()
 	router.HandleFunc("/books", getBooks).Methods("GET")
 	router.HandleFunc("/books/{id}", getBook).Methods("GET")
@@ -71,7 +72,16 @@ func addBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateBook(w http.ResponseWriter, r *http.Request) {
-	log.Println("Updates a book")
+	var book Book
+	json.NewDecoder(r.Body).Decode(&book)
+
+	for i, item := range books {
+		if item.ID == book.ID {
+			books[i] = book
+		}
+	}
+
+	json.NewEncoder(w).Encode(books)
 }
 
 func removeBook(w http.ResponseWriter, r *http.Request) {
