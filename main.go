@@ -85,5 +85,19 @@ func updateBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func removeBook(w http.ResponseWriter, r *http.Request) {
-	log.Println("Removes a book")
+	params := mux.Vars(r)
+	id, _ := strconv.Atoi(params["id"])
+
+	for i, item := range books {
+		if item.ID == id {
+			// books[i+1:]...: 追加される要素については、スライスではなく一つ一つという意味での...だと思う
+			books = append(books[:i], books[i+1:]...)
+			/*
+				ID 1 2 3 4 5
+				i	 0 1 2 3 4
+					     D
+			*/
+		}
+	}
+	json.NewEncoder(w).Encode(books)
 }
