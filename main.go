@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -44,7 +45,18 @@ func getBooks(w http.ResponseWriter, r *http.Request) {
 }
 
 func getBook(w http.ResponseWriter, r *http.Request) {
-	log.Println("Gets one books")
+	// Vars(r): return  r of STRING Map >>  map[id:3]
+	// params["id"] : "id" is the key name anyname can take it. Value is in the request of URL.
+	params := mux.Vars(r)
+	i, _ := strconv.Atoi(params["id"])
+
+	// Check the type of var => log.Println(reflect.TypeOf(i))
+
+	for _, book := range books {
+		if book.ID == i {
+			json.NewEncoder(w).Encode(&book)
+		}
+	}
 }
 
 func addBook(w http.ResponseWriter, r *http.Request) {
