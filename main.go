@@ -4,9 +4,14 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strconv"
+	"os"
+
+	"database/sql"
+	_ "database/sql"
 
 	"github.com/gorilla/mux"
+	"github.com/lib/pq"
+	"github.com/subosito/gotenv"
 )
 
 type Book struct {
@@ -17,6 +22,80 @@ type Book struct {
 }
 
 var books []Book
+var db *sql.DB
+
+func init() {
+	gotenv.Load()
+}
+
+func logFatal(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func main() {
+
+	pgUrl, err := pq.ParseURL(os.Getenv("ELEPHANTSQL_URL"))
+	logFatal(err)
+
+	db, err = sql.Open("postgres", pgUrl)
+	logFatal(err)
+
+	err = db.Ping()
+	logFatal(err)
+
+	// ElephantSQL: -`dbname`, `host`, `password`, `port`, `user`
+	log.Println(pgUrl)
+
+	// PUT: replace resource information
+	router := mux.NewRouter()
+	router.HandleFunc("/books", getBooks).Methods("GET")
+	router.HandleFunc("/books/{id}", getBook).Methods("GET")
+	router.HandleFunc("/books", addBook).Methods("POST")
+	router.HandleFunc("/books", updateBook).Methods("PUT")
+	router.HandleFunc("/books/{id}", removeBook).Methods("DELETE")
+
+	log.Fatal(http.ListenAndServe(":8000", router))
+}
+
+func getBooks(w http.ResponseWriter, r *http.Request) {
+	var book Book
+	books = []Book{}
+
+	rows, err := db.Query("select * from books")
+	logFatal(err)
+
+	defer rows.Close()
+
+	for rows.Next() {
+		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Year)
+		logFatal(err)
+
+		books = append(books, book)
+	}
+	json.NewEncoder(w).Encode(books)
+}
+
+func getBook(w http.ResponseWriter, r *http.Request) {
+
+}
+
+// r: request => such come from Client or Postman
+func addBook(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func updateBook(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func removeBook(w http.ResponseWriter, r *http.Request) {
+
+}
+
+/*
+BEFORE USE DB
 
 func main() {
 
@@ -92,12 +171,13 @@ func removeBook(w http.ResponseWriter, r *http.Request) {
 		if item.ID == id {
 			// books[i+1:]...: 追加される要素については、スライスではなく一つ一つという意味での...だと思う
 			books = append(books[:i], books[i+1:]...)
-			/*
+
 				ID 1 2 3 4 5
 				i	 0 1 2 3 4
 					     D
-			*/
+
 		}
 	}
 	json.NewEncoder(w).Encode(books)
 }
+*/
